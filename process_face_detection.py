@@ -35,31 +35,31 @@ import threading
 import json
 
 
-class Sender(threading.Thread):
-	def run(self):
-		#HOST = '211.202.32.174'
-		HOST = '127.0.0.1'
-		PORT = 11111
-		BUFSIZE = 1024
-		ADDR = (HOST, PORT)
 
-		clientSocket = socket(AF_INET, SOCK_STREAM)  # 1 서버에 접속하기 위한 소켓을 생성한다.
-		print('face detection connecting')
-		# 서버에 접속을 시도한다.
-		clientSocket.connect(ADDR)
-		print('face detection connected!!!')
-		while(True):
-			try:
-				message = clientSocket.recv(BUFSIZE).decode('utf-8')
+def run():
+	#HOST = '211.202.32.174'
+	HOST = '127.0.0.1'
+	PORT = 11111
+	BUFSIZE = 1024
+	ADDR = (HOST, PORT)
 
-				if (message == 'quit'):
-					break
-				elif (message != ''):
-					message = process(message, 'out.jpg', 4)
-					clientSocket.send(message.encode('utf-8'))
-			except Exception as e:
-				print(e)
-		print('Sender closed')
+	clientSocket = socket(AF_INET, SOCK_STREAM)  # 1 서버에 접속하기 위한 소켓을 생성한다.
+	print('face detection connecting')
+	# 서버에 접속을 시도한다.
+	clientSocket.connect(ADDR)
+	print('face detection connected!!!')
+	while(True):
+		try:
+			message = clientSocket.recv(BUFSIZE).decode('utf-8')
+
+			if (message == 'quit'):
+				break
+			elif (message != ''):
+				message = process(message, 'out.jpg', 4)
+				clientSocket.send(message.encode('utf-8'))
+		except Exception as e:
+			print(e)
+	print('Face_Detection closed')
 
 # [START def_detect_face]
 def detect_face(face_file, max_results=4):
@@ -147,7 +147,5 @@ def process(input_filename, output_filename, max_results):
 
 # [START] main
 if __name__ == "__main__":
-	sender = Sender()
-	sender.start()
-	sender.join()
+	run()
 # [END] main

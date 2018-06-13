@@ -9,31 +9,30 @@ from firebase import firebase
 from pyfcm import FCMNotification
 
 
-class Sender(threading.Thread):
-	def run(self):
-		#HOST = '211.202.32.174'
-		HOST = '127.0.0.1'
-		PORT = 11112
-		BUFSIZE = 1024
-		ADDR = (HOST, PORT)
+def run():
+	#HOST = '211.202.32.174'
+	HOST = '127.0.0.1'
+	PORT = 11112
+	BUFSIZE = 1024
+	ADDR = (HOST, PORT)
 
-		# 서버에 접속하기 위한 소켓을 생성
-		clientSocket = socket(AF_INET, SOCK_STREAM)
-		
-		print('notification connecting')
-		# 서버에 접속을 시도한다.
-		clientSocket.connect(ADDR)
-		print('notification connected!!!')
-		while(True):
-			# 서버에서 메세지를 수신
-			message = clientSocket.recv(BUFSIZE).decode('utf-8')
-			if (message == 'quit'):
-				break
-			elif (message != ''):
-				# 서버에서 받은 메세지를 처리
-				message = send_notification()
-				clientSocket.send(str(message).encode('utf-8'))
-		print('Sender closed')
+	# 서버에 접속하기 위한 소켓을 생성
+	clientSocket = socket(AF_INET, SOCK_STREAM)
+	
+	print('notification connecting')
+	# 서버에 접속을 시도한다.
+	clientSocket.connect(ADDR)
+	print('notification connected!!!')
+	while(True):
+		# 서버에서 메세지를 수신
+		message = clientSocket.recv(BUFSIZE).decode('utf-8')
+		if (message == 'quit'):
+			break
+		elif (message != ''):
+			# 서버에서 받은 메세지를 처리
+			message = send_notification()
+			clientSocket.send(str(message).encode('utf-8'))
+	print('Notification closed')
 		
 
 
@@ -91,12 +90,4 @@ def send_notification():
 
 
 if __name__ == "__main__":
-	'''
-	receiver = Receiver()
-	receiver.start()
-	receiver.join()
-	'''
-
-	sender = Sender()
-	sender.start()
-	sender.join()
+	run()
