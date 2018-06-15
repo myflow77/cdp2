@@ -1,5 +1,6 @@
 import json
 import os
+from sound import PlaySound
 
 json_str = '{"files":[{"name":"filename1"},{"name":"filename2"},{"name":"filename3"}]}'
 json_data = json.loads(json_str)
@@ -19,3 +20,7 @@ dic['files'] = files
 json_str = json.dumps(dic)
 
 print(json_str)
+
+st = PlaySound('sounds/ChillingMusic.wav')
+st.daemon = True
+st.start()

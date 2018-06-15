@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 
-# Socket
 from socket import *
 from select import *
 import sys
 from time import ctime
-# Multiprocess
-import threading
 import time
 from queue import Queue
-# Json
 import json
 
 def run():
@@ -24,41 +20,17 @@ def run():
 	clientSocket.connect(ADDR)  # 2. 서버에 접속을 시도한다.
 	print('connect is success')
 
-	'''
-	class Receive(threading.Thread):
-		def run(self):
-			self.alive = True
-			# 하위 프로세스(기능)에서 수신된 메세지를 디바이스에 전달
-			while(self.alive):
-				message = clientSocket.recv(BUFSIZE).decode('utf-8')
-				if (message == 'quit'):
-					break
-				elif (message != ''):
-					print(message)
-
-		def stop(self):
-			self.alive = False
-			self.join()
-
-	receive = Receive()
-	receive.daemon = True
-	receive.start()
-	'''
-
 	while(True):
 		command = input("Command Number : ")
 
 		dic = {}
 		# 커맨드에 따라 명령을 생성
 		if command == '0':
-			print("Command 0")
 			dic['message'] = 'list'
 		elif command == '1':
-			print("Command 1")
 			dic['message'] = 'delete'
 			dic['filename'] = 'ChillingMusic.1.wav'
 		elif command == '2':
-			print("Command 2")
 			dic['message'] = 'play'
 			dic['filename'] = 'ChillingMusic.wav'
 		elif command == '3':
@@ -66,9 +38,6 @@ def run():
 			pass
 		elif command == 'quit':  # 종료 명령이 들어왔을 경우
 			print("Device is stopping")
-			#receive.stop()
-			sys.exit(0)
-			print('Device closed')
 			break
 
 		# 명령을 json으로 변환
@@ -86,6 +55,8 @@ def run():
 				print(files)
 			except Exception as e:
 				print(e)
+	
+	clientSocket.close()
 
 	print('Device is closed')
 
