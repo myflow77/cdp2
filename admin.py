@@ -102,7 +102,7 @@ class Sender(Thread):
 				temp += '\n'
 				# 메세지를 디바이스로 전송
 				if temp != '':
-					print("QUEUE TO DEVICE :", temp)
+					print("QUEUE TO DEVICE : {0}".format(temp))
 					self.clientSocket.send(temp.encode('utf-8'))
 			time.sleep(0.1)
 
@@ -123,15 +123,18 @@ def get_filelist(json_data):
 		files.append(temp_dic)
 	dic = {}
 	dic['files'] = files
+	print("FILE LIST : ", files)
 	json_str = json.dumps(dic)
 	message_queue.put(json_str)
 
 
 # 디렉토리의 파일을 삭제
 def delete_file(json_data):
-	os.remove('sounds/' + json_data['filename'])
-	print("Successfully remove", json_data['filename'])
-	print(os.listdir(os.getcwd() + '/sounds'))
+	try:
+		os.remove('sounds/' + json_data['filename'])
+		print("REMOVE SUCCESSFULLY : ", json_data['filename'])
+	except Exception as e:
+		print(e)
 
 
 # 디렉토리의 음악을 재생
@@ -142,8 +145,12 @@ def play_music(json_data):
 			Servers[i].MESSAGE = json_data['filename']
 	print("Successfully play music")
 	'''
-	thread_sound = sound.PlaySound(json_data['filename'])
-	thread_sound.start()
+	try:
+		thread_sound = sound.PlaySound(json_data['filename'])
+		thread_sound.start()
+		print("PLAY SOUND SUCCESSFULLY : ", json_data['filename'])
+	except Exception as e:
+		print(e)
 
 
 # 디바이스로부터 파일을 전송받음
@@ -151,8 +158,9 @@ def receive_file(json_data):
 	filename = json_data['filename']
 	filesize = json_data['size']
 	BUFFERSIZE = 4096
-	downloaded = BUFFERSIZE
+	downloaded = 0
 	print("Start File Server")
+	print("File Size :", filesize)
 	try:
 		HOST = ''
 		PORT = 10000
@@ -167,23 +175,25 @@ def receive_file(json_data):
 		# 파일 생성
 		f = open('sounds/' + filename, 'wb')
 		l = c.recv(BUFFERSIZE)
+		downloaded += len(l)
 
 		count = 0
 
 		while (l):
 			if count == 100:
-				processed = float(downloaded / filesize) * 100
-				print("Process : {0:.2f}%".format(processed))
+				float(filesize)
+				processed = downloaded / filesize * 100
+				print("Process : {0:.2f}% <== {1}".format(processed, len(l)))
 				count = 0
 			f.write(l)
 			l = c.recv(BUFFERSIZE)
-			downloaded += BUFFERSIZE
+			downloaded += len(l)
 			count += 1
 		f.close()
 		c.close()
 	except Exception as e:
+		print("FAIL TO RECEIVE FILE")
 		print(e)
-		print("OUT!!!!")
 
 # [START] main
 if __name__ == "__main__":
@@ -220,7 +230,7 @@ if __name__ == "__main__":
 	serverSocket.bind(ADDR)  # 2.소켓 주소 정보 할당
 
 	while(True):
-		print("[ Server start to listen ]")
+		print("\n[ Server start to listen ]\n")
 		serverSocket.listen(100)  # 3.연결 수신 대기 상태
 
 		clientSocket, addr_info = serverSocket.accept()  # 4.연결 수락
@@ -235,7 +245,7 @@ if __name__ == "__main__":
 		while(True):
 			try:
 				# 디바이스에서 메세지 수신
-				print("[ Waiting message ]")
+				print("\n[ Waiting message ]\n")
 				json_str = clientSocket.recv(BUFSIZE).decode('utf-8')
 				# 소켓이 종료되면 다시 Listen 상태로 들어감
 				if json_str == '':
