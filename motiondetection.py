@@ -7,11 +7,13 @@ from notification import SendNotification
 import os
 
 if __name__ == "__main__":
-	cap = cv2.VideoCapture("http://127.0.0.1:8080/?action=stream")
+	cap = cv2.VideoCapture("http://127.0.0.1:8080/?action=stream/frame.mjpg")
 	count = 1
 	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 	fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
 	check_time = time.process_time()
+	check_time_flag=time.process_time()
+	check_flag = True
 
 	HOST = '127.0.0.1'
 	PORT = 11112
@@ -36,16 +38,22 @@ if __name__ == "__main__":
 
 			n_white_pix = np.sum(fgmask == 255)
 
-			if(n_white_pix > 3000):
+			if(n_white_pix > 10000 and check_flag):
 				clientSocket.send('notify_motion'.encode('utf-8'))
+				check_flag=False
+				check_time_flag=time.process_time()
+				print(n_white_pix)
 
 			coltime = time.process_time() - check_time
-			print("coltime :", coltime)
+			check_coltime= time.process_time() - check_time_flag
 
-			#if(coltime > 60):
-			if True:
+			if(check_coltime > 30 and not(check_flag)):
+				check_time_flag = time.process_time()
+				check_flag=True
+
+			if(coltime > 60):
 				check_time = time.process_time()
-				str_name = os.getcwd() + "pictures/in.jpg"
+				str_name = "./pictures/in.jpg"
 				print("Image file is saved")
 				cv2.imwrite(str_name, frame)
 				count += 1
@@ -58,7 +66,6 @@ if __name__ == "__main__":
 		except Exception as e:
 			print("MOTION ERROR :", e)
 		# 일정 시간 휴식
-		time.sleep(30)
 
 	print('END : motion closed')
 
