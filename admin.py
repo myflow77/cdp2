@@ -39,46 +39,51 @@ class Receiver(Thread):
 		serverSocket = socket(AF_INET, SOCK_STREAM)  # 1.소켓을 생성한다.
 
 		serverSocket.bind(ADDR)  # 2.소켓 주소 정보 할당
+		while True:
+			serverSocket.listen(100)  # 3.연결 수신 대기 상태
 
-		serverSocket.listen(100)  # 3.연결 수신 대기 상태
+			print(self.NAME, '==> wait')
 
-		clientSocket, addr_info = serverSocket.accept()  # 4.연결 수락
+			clientSocket, addr_info = serverSocket.accept()  # 4.연결 수락
 
-		print(self.NAME, 'accept')
+			print(self.NAME, '==> accept')
 
-		while(True):
-			'''
-			# message 확인
-			message = self.MESSAGE
-			self.MESSAGE = ''
-			
-			# 하위 프로세스에 메세지 전송
-			clientSocket.send(message.encode('utf-8'))
-			if (message == 'quit'):
-				break
-			'''
+			while(True):
+				'''
+				# message 확인
+				message = self.MESSAGE
+				self.MESSAGE = ''
+				
+				# 하위 프로세스에 메세지 전송
+				clientSocket.send(message.encode('utf-8'))
+				if (message == 'quit'):
+					break
+				'''
 
-			# 결과 수신
-			message = clientSocket.recv(BUFSIZE).decode('utf-8')
-			if (message == 'quit'):
-				break
-			# 수신된 메세지를 출력
-			elif (message != ''):
-				print("RECV FROM PROCESS :", message)
-				if message == 'notify_emotion':
-					thread_notify = SendNotification("아이를 확인해주세요!")
-					thread_notify.start()
-				elif message == 'notify_crying':
-					thread_notify = SendNotification("아이를 확인해주세요!")
-					thread_notify.start()
-				elif message == 'notify_moving':
-					thread_notify = SendNotification("아이를 확인해주세요!")
-					thread_notify.start()
-				else:
-					message_queue.put(message)
+				# 결과 수신
+				message = clientSocket.recv(BUFSIZE).decode('utf-8')
+				if message == '' or message == 'quit':
+					break
+				# 수신된 메세지를 출력
+				elif message != '':
+					print("RECV FROM PROCESS :", message)
+					if message == 'notify_emotion':
+						thread_notify = SendNotification("아이를 확인해주세요!")
+						thread_notify.start()
+					elif message == 'notify_crying':
+						thread_notify = SendNotification("아이를 확인해주세요!")
+						thread_notify.start()
+					elif message == 'notify_motion':
+						thread_notify = SendNotification("아이를 확인해주세요!")
+						thread_notify.start()
+					else:
+						message_queue.put(message)
 
-		# 소켓 종료
-		clientSocket.close()
+			# 클라이언트 소켓 종료
+			clientSocket.close()
+			print(self.NAME, '==> close')
+		
+		# 서버 소켓 종료
 		serverSocket.close()
 
 		print(self.NAME, 'closed')
@@ -102,7 +107,7 @@ class Sender(Thread):
 				temp += '\n'
 				# 메세지를 디바이스로 전송
 				if temp != '':
-					print("QUEUE TO DEVICE : {0}".format(temp))
+					#print("QUEUE TO DEVICE : {0}".format(temp))
 					self.clientSocket.send(temp.encode('utf-8'))
 			time.sleep(0.1)
 
@@ -139,16 +144,9 @@ def delete_file(json_data):
 
 # 디렉토리의 음악을 재생
 def play_music(json_data):
-	'''
-	for i in range(len(Servers)):
-		if Servers[i].NAME == 'sound':
-			Servers[i].MESSAGE = json_data['filename']
-	print("Successfully play music")
-	'''
 	try:
-		thread_sound = sound.PlaySound(json_data['filename'])
+		thread_sound = sound.PlaySound('sounds/' + json_data['filename'])
 		thread_sound.start()
-		print("PLAY SOUND SUCCESSFULLY : ", json_data['filename'])
 	except Exception as e:
 		print(e)
 
@@ -176,19 +174,20 @@ def receive_file(json_data):
 		f = open('sounds/' + filename, 'wb')
 		l = c.recv(BUFFERSIZE)
 		downloaded += len(l)
-
 		count = 0
 
 		while (l):
+			f.write(l)
+			l = c.recv(BUFFERSIZE)
+			downloaded += len(l)
+			count += 1
+			# 파일 수신 과정 출력
 			if count == 100:
 				float(filesize)
 				processed = downloaded / filesize * 100
 				print("Process : {0:.2f}% <== {1}".format(processed, len(l)))
 				count = 0
-			f.write(l)
-			l = c.recv(BUFFERSIZE)
-			downloaded += len(l)
-			count += 1
+
 		f.close()
 		c.close()
 	except Exception as e:
@@ -202,19 +201,10 @@ if __name__ == "__main__":
 	Servers.append(emotion)
 	emotion.start()
 
-	'''
-	# notification 프로세스와 통신하는 서버 스레드 생성
-	notification = Receiver("notification", 11112)
-	Servers.append(notification)
-	notification.start()
-	'''
-
-	'''
-	# sound 프로세스와 통신하는 서버 스레드 생성
-	sound = Receiver("sound", 11113)
-	Servers.append(sound)
-	sound.start()
-	'''
+	# emotion 프로세스와 통신하는 서버 스레드 생성
+	emotion = Receiver("motion", 11112)
+	Servers.append(emotion)
+	emotion.start()
 
 	# 디바이스 통신 서버 생성
 	NAME = "manager"
@@ -230,7 +220,7 @@ if __name__ == "__main__":
 	serverSocket.bind(ADDR)  # 2.소켓 주소 정보 할당
 
 	while(True):
-		print("\n[ Server start to listen ]\n")
+		print("\n[ Start to listen ]\n")
 		serverSocket.listen(100)  # 3.연결 수신 대기 상태
 
 		clientSocket, addr_info = serverSocket.accept()  # 4.연결 수락
@@ -284,6 +274,7 @@ if __name__ == "__main__":
 
 		# 클라이언트 소켓 종료
 		clientSocket.close()
+		print("\n[ Close client socket ]\n")
 	
 	# 서버 소켓 종료
 	serverSocket.close()
@@ -291,5 +282,3 @@ if __name__ == "__main__":
 	# 하위 프로세스 통신 스레드 join
 	print("Wait to join other process")
 	emotion.join()
-	#notification.join()
-	#sound.join()

@@ -25,7 +25,6 @@ from socket import *
 from select import *
 import sys
 from time import ctime
-import threading
 import json
 import time
 import notification
@@ -55,6 +54,7 @@ def detect_face(face_file, max_results=4):
 	return faces
 # [END def_detect_face]
 
+
 # [START def_highlight_faces]
 def highlight_faces(image, faces, output_filename):
 	"""Draws a polygon around the faces, then saves to output_filename.
@@ -69,7 +69,7 @@ def highlight_faces(image, faces, output_filename):
 	im = Image.open(image)
 	draw = ImageDraw.Draw(im)
 
-	count = 1
+	count = 0
 	result = {}
 
 	for face in faces:
@@ -77,34 +77,37 @@ def highlight_faces(image, faces, output_filename):
                     for vertex in face.bounding_poly.vertices]
 		draw.line(box + [box[0]], width=5, fill='#00ff00')
 
+		count += 1
 		result['number'] = count
 		result['joy'] = face.joy_likelihood
 		result['sorrow'] = face.sorrow_likelihood
 		result['anger'] = face.anger_likelihood
 		result['surprise'] = face.surprise_likelihood
-		count += 1
 		break
 
-	print(result)
+	print("result(dic) :", result)
 
 	im.save(output_filename)
 
 	return result
 # [END def_highlight_faces]
 
+
 # [START] emotion_recognition
 def emotion_recognition(input_filename, output_filename, max_results):
 	with open(input_filename, 'rb') as image:
 		faces = detect_face(image, max_results)
+		print("faces :", faces)
 		#print('Found {} face{}'.format(len(faces), '' if len(faces) == 1 else 's'))
 
 		#print('Writing to file {}'.format(output_filename))
 		# Reset the file pointer, so we can read the file again
 		image.seek(0)
-		result_string = highlight_faces(image, faces, output_filename)
+		result = highlight_faces(image, faces, output_filename)
 
-		return result_string
+		return result
 # [END] emotion_recognition
+
 
 # [START] main
 if __name__ == "__main__":
@@ -136,7 +139,9 @@ if __name__ == "__main__":
 		try:
 			result = emotion_recognition('pictures/in.jpg', 'pictures/out.jpg', 4)
 
-			if result['sorrow'] > 2 or result['anger'] > 2 or result['surprise'] > 2:
+			if len(result) < 1:
+				print("There are no faces in picture")
+			elif result['number'] > 0 and result['sorrow'] > 2 or result['anger'] > 2 or result['surprise'] > 2:
 				clientSocket.send('notify_emotion'.encode('utf-8'))
 		except Exception as e:
 			print("EMOTION ERROR :", e)

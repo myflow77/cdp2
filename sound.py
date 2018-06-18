@@ -4,7 +4,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 import sys
 from threading import Thread
 import time
-from playsound import playsound
+import pygame
 
 class PlaySound(Thread):
 	def __init__(self, filename):
@@ -18,8 +18,12 @@ class PlaySound(Thread):
 
 def play_sound(filename):
 	try:
-		playsound(filename)
-		print(filename, "played")
+		pygame.mixer.init()
+		pygame.mixer.music.load(filename)
+		pygame.mixer.music.play()
+		while pygame.mixer.music.get_busy() == True:
+			continue
+		print("PLAY SOUND SUCCESSFULLY : ", filename)
 		return True
 	except Exception as e:
 		print(e)
