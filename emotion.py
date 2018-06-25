@@ -143,10 +143,11 @@ if __name__ == "__main__":
 				print("There are no faces in picture")
 			elif result['number'] > 0 and result['sorrow'] > 2 or result['anger'] > 2 or result['surprise'] > 2:
 				clientSocket.send('notify_emotion'.encode('utf-8'))
+			
+			# 일정 시간 휴식
+			time.sleep(30)
 		except Exception as e:
 			print("EMOTION ERROR :", e)
-		# 일정 시간 휴식
-		time.sleep(30)
 
 	print('END : Face_Detection closed')
 # [END] main

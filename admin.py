@@ -68,10 +68,10 @@ class Receiver(Thread):
 				elif message != '':
 					print("RECV FROM PROCESS :", message)
 					if message == 'notify_emotion':
-						thread_notify = SendNotification("아이를 확인해주세요!")
+						thread_notify = SendNotification("아이가 울고있어요!")
 						thread_notify.start()
 					elif message == 'notify_crying':
-						thread_notify = SendNotification("아이를 확인해주세요!")
+						thread_notify = SendNotification("아이가 울고 있어요!")
 						thread_notify.start()
 					elif message == 'notify_motion':
 						thread_notify = SendNotification("아이를 확인해주세요!")
@@ -201,10 +201,15 @@ if __name__ == "__main__":
 	Servers.append(emotion)
 	emotion.start()
 
-	# emotion 프로세스와 통신하는 서버 스레드 생성
-	emotion = Receiver("motion", 11112)
-	Servers.append(emotion)
-	emotion.start()
+	# motion 프로세스와 통신하는 서버 스레드 생성
+	motion = Receiver("motion", 11112)
+	Servers.append(motion)
+	motion.start()
+
+	# voice 프로세스와 통신하는 서버 스레드 생성
+	voice = Receiver("voice", 11113)
+	Servers.append(voice)
+	voice.start()
 
 	# 디바이스 통신 서버 생성
 	NAME = "manager"
@@ -225,7 +230,7 @@ if __name__ == "__main__":
 
 		clientSocket, addr_info = serverSocket.accept()  # 4.연결 수락
 
-		print(NAME, 'accept')
+		print("\n[ Manager accepted ]\n")
 
 		# 메시지를 디바이스로 보내주는 스레드 생성
 		send = Sender(clientSocket)
@@ -240,17 +245,17 @@ if __name__ == "__main__":
 				# 소켓이 종료되면 다시 Listen 상태로 들어감
 				if json_str == '':
 					break
-				print('RECEIVE FROM DEVICE :', json_str)
+				print('\n[ RECEIVE FROM DEVICE : {0} ]\n'.format(json_str))
 				# 수신한 메세지를 파싱하여 결과 실행
 				json_data = json.loads(json_str)
 				message = json_data['message']
 			except Exception as e:
-				print("Error on parsing json string")
+				print("\n[ Error on parsing json string ]\n")
 				print(e)
 				exit(0)
 			try:
 				if message == 'quit':
-					print(NAME, "stopping")
+					print("\n[ Manager stopping ]\n")
 					for i in range(len(Servers)):
 						Servers[i].MESSAGE = message
 					break
@@ -263,14 +268,14 @@ if __name__ == "__main__":
 				elif message == 'upload':
 					receive_file(json_data)
 			except Exception as e:
-				print("Error on after process")
+				print("\n[ Error on after process ]\n")
 				print(e)
 
 		# 디바이스 전송 스레드 종료
-		print("Start to wait thread")
+		print("\n[ Start to wait thread ]\n")
 		send.alive = False
 		send.join()
-		print("End to wait thread")
+		print("\n[ End to wait thread ]\n")
 
 		# 클라이언트 소켓 종료
 		clientSocket.close()
@@ -280,5 +285,5 @@ if __name__ == "__main__":
 	serverSocket.close()
 
 	# 하위 프로세스 통신 스레드 join
-	print("Wait to join other process")
+	print("\n[ Wait to join other process ]\n")
 	emotion.join()
